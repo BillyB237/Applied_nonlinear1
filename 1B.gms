@@ -7,7 +7,7 @@ Sets
     j other item /Vmax,Spmax,Fmax,Pmax,Changemax/
 ;
 
-Table Values(s,i)  table of parameter values
+Table TV(s,i)  table of parameter values
     k      a     b       c       V0          vw
 1  4.0    0.8    0.01  -0.0005   1000000    0.11
 2  5.0    1.1    0.02  -0.0006   1000000    0.09;
@@ -59,18 +59,24 @@ Variable
 
 Positive variables
     u(t,s)  usable outflow from station s by time t
-    p(t,u,s) power generated at time t by waterflow u and by station s
     spill(t,s) spillage from station s by time t
     V(t,s) Volume in basin at time t in station s
     b(t) MWh bought at time t
-    
-    
+    p(t,s)
+    eta(t,s) eta function
 ;
 
 Equations
     COST total cost
+    PowProd(t,s)  power produced
+    etaconstants(t,s) calculation
 ;
 
-COST .. C =E= SUM(t, priceb(t)*b(t)) - SUM((t,s), p(t,u,s)*prices(t)) - SUM(s, T(s,6)*V(t,s));
+etaconstants(t,s) .. eta(t,s) =E= TV(s,"a")+TV(s,"b")*u(t,s)+ TV(s,"c")*u(t,s)**2;
+PowProd(t,s).. p(t,s) =E= TV(s,"k")*eta(t,s)*u(t,s);
 
-Solve 1B using NLP maximizing C;
+
+COST .. C =E= SUM(t, priceb(t)*b(t)) - SUM((t,s), p(t,s)*prices(t)) - SUM(s, TV(s,"vw")*V("24",s));
+
+Model myModel /all/;
+Solve myModel using NLP minimizing C;

@@ -3,7 +3,7 @@
 Sets
     s station /1,2/
     t hour /1*24/
-    i item /1*6/
+    i item /1*5/
 ;
 
 Table Values(s,i)  table of parameter values

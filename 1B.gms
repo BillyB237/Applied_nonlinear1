@@ -3,18 +3,19 @@
 Sets
     s station /1,2/
     t hour /1*24/
-    i item /1*5/
+    i item /k,a,b,c,V0,vw/
+    j other item /Vmax,Spmax,Fmax,Pmax,Changemax/
 ;
 
 Table Values(s,i)  table of parameter values
-            k       a       b       c       V0      vw
-1           4.0    0.8    0.01  -0.0005     10^6    0.11
-2           5.0    1.1    0.02  -0.0006     10^4    0.09;
+    k      a     b       c       V0          vw
+1  4.0    0.8    0.01  -0.0005   1000000    0.11
+2  5.0    1.1    0.02  -0.0006   1000000    0.09;
 
-Table Dam(s,i)  table of dam values
+Table Dam(s,j)  table of dam values
     Vmax        Spmax   Fmax    Pmax    changemax
-1   10^6          50     20     100       0.25  
-2   1.8*10^5      50     30     100       0.25
+1   1000000       50     20     100       0.25  
+2   1.800000      50     30     100       0.25
 ;
 
 Parameters
@@ -57,8 +58,8 @@ Variable
 ;
 
 Positive variables
-    p(t,u,s) power generated at time t by waterflow u and by station s
     u(t,s)  usable outflow from station s by time t
+    p(t,u,s) power generated at time t by waterflow u and by station s
     spill(t,s) spillage from station s by time t
     V(t,s) Volume in basin at time t in station s
     b(t) MWh bought at time t

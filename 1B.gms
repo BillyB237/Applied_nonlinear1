@@ -2,7 +2,7 @@
 
 Sets
     s station /1,2/
-    t timesteps /1*24/
+    t timesteps /1*1440/
     i item /k,a,b,c,V0,vw/
     j other item /Vmax,Spmax,Umax,Pmax,Changemax/
 ;
@@ -13,44 +13,44 @@ Table TV(s,i)  table of parameter values
 2  5.0    1.1    0.02  -0.0006   10000      0.09;
 
 Table maxval(s,j)  table of max values
-    Vmax        Spmax       Umax        Pmax        changemax
-1   1500000       18000     72000     100           18000
-2   180000        18000     108000     100          21600
+    Vmax        Spmax      Umax      Pmax        changemax
+1   1500000       3000     1200      100          300
+2   180000        3000     1800      100          450
 ;
 
 Parameters
-    demand(t) demand at different hours
-    /1*3    0
-     4     40
-     5     60
-     6     70
-     7     80
-     8     100
-     9      90
-     10*12  50
-     13*15  30
-     16     40
-     17     100
-     18     120
-     19     80
-     20     60
-     21*22  40
-     23     20
-     24     10/
+    demand(t) demand at different time 
+    /1*180        0
+     181*240     40
+     241*300     60
+     301*360     70
+     361*420     80
+     421*480     100
+     481*540      90
+     541*720      50
+     721*900      30
+     901*960      40
+     961*1020     100
+     1021*1080     120
+     1081*1140     80
+     1141*1200     60
+     1201*1320     40
+     1321*1380     20
+     1381*1440     10/
      
-    c1(t) Price to purchase MWh at different hours
-    /1*4 44
-     5*7 50
-     8*24 44/
+    c1(t) Price to purchase MWh at different times
+    /1*240 44
+     241*420 50
+     421*1440 44/
     
-    c2(t) Price to sell MWh at different hours
-    /1*4 39
-     5*7 45
-     8*24 39/
+    c2(t) Price to sell MWh at different times
+    /1*240 39
+     241*420 45
+     421*1440 39/
      
     inflow(s) natural inflow of water to each dam - excluding passing from upper station to lower
-    /1 10800
-     2 7200/
+    /1 180
+     2 120/
      
 ;
   
@@ -73,8 +73,11 @@ Equations
     PowProd(t,s)  power produced
     etaconstants(t,s) calculation
     sat_demand(t) Ensures demand is satisfied
-    basin1(t,s) Volume in basin at time t
-    basin1_initial(t,s) Volume in basin at time t
+    basin1(t) Volume in basin 1 at time t
+    basin2(t) Volume in basin 2 at time t
+    basin2_initial(t)
+
+    basin_initial(t,s) Volume in basin s  at time 0
     
     max_turbine maximum constraints for certain variables
     max_basin
@@ -90,12 +93,16 @@ Equations
 ;
 
 etaconstants(t,s) .. eta(t,s) =E= TV(s,"a")+TV(s,"b")*u(t,s)+ TV(s,"c")*u(t,s)**2;
-PowProd(t,s).. p(t,s) =E= TV(s,"k")*eta(t,s)*u(t,s)*3600;
+PowProd(t,s).. p(t,s) =E= TV(s,"k")*eta(t,s)*u(t,s);
 
-sat_demand(t) .. demand(t) =E=  sum(s,p(t,s))+b(t);
+sat_demand(t) .. demand(t)*60 =E=  sum(s,p(t,s))+b(t)/60;
 
-basin1(t,s)$(ord(t) > 1).. V(t,s) =e= V(t-1,s) - u(t,s)*3600 - spill(t-1,s)*3600 + inflow(s);
-basin1_initial(t,s)$(ord(t) = 1).. V(t,s) =e= TV(s,"V0");
+basin1(t)$(ord(t) > 1).. V(t,"1") =e= V(t-1,"1") - u(t,"1") - spill(t-1,"1") + inflow("1");
+basin2(t)$(ord(t) >= 152).. V(t,"2") =e= V(t-1,"2") - u(t,"2") - spill(t-1,"2") + inflow("2") + u(t-152,"1")+spill(t-152,"1");
+
+basin2_initial(t)$(ord(t) < 152).. V(t,"2") =e= V(t-1,"2") - u(t,"2") - spill(t-1,"2") + inflow("2");
+
+basin_initial(t,s)$(ord(t) = 1).. V(t,s) =e= TV(s,"V0");
 
 
 max_turbine(t,s) .. u(t,s) =l= maxval(s,"Umax");
@@ -110,7 +117,7 @@ totP(t) .. sum(s, P(t,s)) =l= 100;
 totb(t) .. b(t) =l= 100;
 
 
-COST .. C =E= SUM(t, c1(t)*b(t)) - SUM((t,s), p(t,s)*c2(t)) - SUM(s, TV(s,"vw")*V("24",s));
+COST .. C =E= SUM(t, c1(t)*b(t)*60) - SUM((t,s), p(t,s)*c2(t)*60) - SUM(s, TV(s,"vw")*V("24",s));
 
 
 Model myModel /all/;

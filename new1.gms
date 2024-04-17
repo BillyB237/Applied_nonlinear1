@@ -91,24 +91,16 @@ Equations
     max_increase(t,s)
     max_decrease(t,s)
     totb(t)
-    totP(t)
-    
-    
-
-   
+    totP(t)   
 ;
 
 PowProd(t,s).. p(t,s) =E= TV(s,"k") * eta(t,s) * (u(t,s)/3600);
 etaconstants(t,s) .. eta(t,s) =E= TV(s,"a") + TV(s,"b") * (u(t,s)/3600) + TV(s,"c") * (u(t,s)/3600)**2;
 
-
-
 sat_demand(t) .. demand(t) =E=  sum(s,p(t,s))+b(t);
 
 basin(t,s)$(ord(t) > 1).. V(t,s) =e= V(t-1 ,s) - u(t,s) - spill(t,s) + inflow(s)*3600;
-
 basin2(t)$(ord(t) > 3).. V(t,"2") =e= V(t-1,"2") - u(t,"2") - spill(t-1,"2") + inflow("2") + u(t-3,"1")+spill(t-3,"1");
-
 basin_initial(t,s)$(ord(t) = 1).. V(t,s) =e= TV(s,"V0") - u(t,s) - spill(t,s) + inflow(s)*3600;
 
 max_turbine(t,s) .. u(t,s) =l= maxval(s,"Umax")*3600;

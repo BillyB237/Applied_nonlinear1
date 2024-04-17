@@ -14,9 +14,9 @@ Table TV(s,i)  table of parameter values
 2           5.0    1.1    0.02  -0.0006     10000       0.09;
 
 Table maxval(s,j)  table of max values
-    Vmax        Spmax      Umax         Pmax           changemax
-1   1500000      50         20          100                 5
-2   180000       50         30          100                 7.5
+    Vmax        Spmax      Umax         Pmax     changemax
+1   1500000      50         20          100          5
+2   180000       50         30          100         7.5
 ;
 
 
@@ -66,6 +66,7 @@ Positive variables
     spill(t,s) spillage from station s by time t
     V(t,s) Volume in basin of station s at time t
     b(t) MWh bought at time t
+    x(t) MWh sold at time t
     p(t,s)
 ;
 
@@ -76,8 +77,6 @@ Equations
     sat_demand(t) Ensures demand is satisfied
     basin(t,s) Volume in basin 1 at time t
     basin2(t) Volume in basin 2 at time t
-*    basin2_initial(t)
-*    basin(t,s)
 
 
     
@@ -86,37 +85,42 @@ Equations
     max_turbine maximum constraints for certain variables
     max_basin
     max_spill
-    max_power
+    max_power(t)
     
     max_increase(t,s)
     max_decrease(t,s)
     totb(t)
-    totP(t)   
+    totx(t)
+    
+*    sold(t)
 ;
 
-PowProd(t,s).. p(t,s) =E= TV(s,"k") * eta(t,s) * (u(t,s)/3600);
-etaconstants(t,s) .. eta(t,s) =E= TV(s,"a") + TV(s,"b") * (u(t,s)/3600) + TV(s,"c") * (u(t,s)/3600)**2;
+PowProd(t,s).. p(t,s) =E= TV(s,"k") * eta(t,s) * (u(t,s));
+etaconstants(t,s) .. eta(t,s) =E= TV(s,"a") + TV(s,"b") * (u(t,s)) + TV(s,"c") * (u(t,s))**2;
 
-sat_demand(t) .. demand(t) =E=  sum(s,p(t,s))+b(t);
+sat_demand(t) .. demand(t) =e=  sum(s,p(t,s))+b(t)-x(t);
 
-basin(t,s)$(ord(t) > 1).. V(t,s) =e= V(t-1 ,s) - u(t,s) - spill(t,s) + inflow(s)*3600;
+basin(t,s)$(ord(t) > 1).. V(t,s) =e= V(t-1 ,s) - u(t,s) - spill(t,s) + inflow(s);
 basin2(t)$(ord(t) > 3).. V(t,"2") =e= V(t-1,"2") - u(t,"2") - spill(t-1,"2") + inflow("2") + u(t-3,"1")+spill(t-3,"1");
-basin_initial(t,s)$(ord(t) = 1).. V(t,s) =e= TV(s,"V0") - u(t,s) - spill(t,s) + inflow(s)*3600;
+basin_initial(t,s)$(ord(t) = 1).. V(t,s) =e= TV(s,"V0") - u(t,s) - spill(t,s) + inflow(s);
 
-max_turbine(t,s) .. u(t,s) =l= maxval(s,"Umax")*3600;
+max_turbine(t,s) .. u(t,s) =l= maxval(s,"Umax");
 max_basin(t,s) .. V(t,s) =l= maxval(s,"Vmax");
-max_spill(t,s) .. spill(t,s) =l= maxval(s,"Spmax")*3600;
-max_power(t,s) .. p(t,s) =l= maxval(s,"Pmax")*3600;
+max_spill(t,s) .. spill(t,s) =l= maxval(s,"Spmax");
+max_power(t) .. sum(s,p(t,s)) =l= maxval("1","Pmax");
 
-max_increase(t,s)$(ord(t)>1) .. u(t,s) =l= u(t-1,s) + 0.25*maxval(s,"Umax")*3600;
-max_decrease(t,s)$(ord(t)>1) .. u(t,s) =g= u(t-1,s) - 0.25*maxval(s,"Umax")*3600;
+max_increase(t,s)$(ord(t)>1) .. u(t,s) =l= u(t-1,s) + 0.25*maxval(s,"Umax");
+max_decrease(t,s)$(ord(t)>1) .. u(t,s) =g= u(t-1,s) - 0.25*maxval(s,"Umax");
 
 totb(t) .. b(t) =l= 100;
-totP(t) .. sum(s, p(t,s)) =l= 100;
+
+*sold(t) .. x(t) =e= sum(s,p(t,s))-demand(t);
+
+totx(t) .. x(t) =l= 100;
 
 
-COST .. C =E= SUM(t, (c1(t)-c2(t))*b(t));
-*        - SUM(s, TV(s,"vw")*V("24",s));
+COST .. C =E= SUM(t, c1(t)*b(t))
+    - sum(t,x(t)*c2(t))    - SUM(s, TV(s,"vw")*V("24",s));
 
 * Define the model
 Model myModel2 /all/;
@@ -126,4 +130,4 @@ Model myModel2 /all/;
 Solve myModel2 using NLP minimizing C;
 
 * Display results for variable C and control variables u and others
-display C.L, u.L, eta.L, p.L, V.L, b.L;
+display C.L, u.L, x.L, p.L, V.L, b.L;

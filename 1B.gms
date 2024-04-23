@@ -2,7 +2,7 @@
 *Solution of Task 1
 
 Sets
-    t hour /0*24/
+    t hour /1*24/
     s station /1,2/
     i item /k,a,b,c,V0,vw,g,l/
     j other item /Vmax,Spmax,Umax,Pmax,Changemax/
@@ -23,7 +23,7 @@ Table maxval(s,j)  table of max values
 
 Parameters
     demand(t) demand at different hours
-    /0*3    0
+    /1*3    0
      4     40
      5     60
      6     70
@@ -42,12 +42,12 @@ Parameters
      24     10/
      
     c1(t) Price to purchase MWh at different hours
-    /0*4 44
+    /1*4 44
      5*7 50
      8*24 44/
     
     c2(t) Price to sell MWh at different hours
-    /0*4 39
+    /1*4 39
      5*7 45
      8*24 39/
      
